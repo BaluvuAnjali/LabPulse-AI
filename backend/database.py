@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import sqlite3
 from contextlib import contextmanager
 
@@ -8,7 +9,11 @@ from contextlib import contextmanager
 # ============================================================
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DATABASE_PATH = BASE_DIR / "backend" / "academic_lab.db"
+# On Render, set LABPULSE_DB_PATH to a file on a Persistent Disk, e.g.
+# /var/data/academic_lab.db. Locally, keep the existing project database.
+DATABASE_PATH = Path(
+    os.getenv("LABPULSE_DB_PATH", str(BASE_DIR / "backend" / "academic_lab.db"))
+).expanduser()
 
 
 # ============================================================

@@ -2862,11 +2862,6 @@ function Activities({
 
 function TimetableUpload({ meta, onImported }) {
   const [file, setFile] = useState(null)
-  const [year, setYear] = useState(
-    meta.years.at(-1) || 'IV Year'
-  )
-  const [semester, setSemester] =
-    useState('Semester 1')
   const [history, setHistory] = useState([])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
@@ -2884,37 +2879,29 @@ function TimetableUpload({ meta, onImported }) {
 
   const upload = async () => {
     if (!file) {
-      setError('Choose the semester Excel/CSV first.')
+      setError('Please choose one Excel/CSV workbook first.')
       return
     }
 
-    if (
-      !window.confirm(
-        'This replaces timetable master data only. Faculty usage, requests and activities are preserved. Continue?'
-      )
-    ) {
-      return
-    }
+    if (!window.confirm(
+      'This replaces the timetable master data with the uploaded workbook. Faculty usage, requests and activities are preserved. Continue?'
+    )) return
 
     setBusy(true)
     setError('')
+    setMessage('')
 
     try {
       const formData = new FormData()
       formData.append('file', file)
 
-      const result = await api(
-        `/api/timetable/upload?academic_year=${esc(
-          year
-        )}&semester=${esc(semester)}`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      )
+      const result = await api('/api/timetable/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
       setMessage(
-        `${result.rows_imported} rows imported • ${result.academic_year} • ${result.semester}`
+        `${result.rows_imported} rows imported. Years detected: ${(result.years_detected || []).join(', ') || result.academic_year}. Venue mappings imported: ${result.venue_mappings_imported ?? 0}.`
       )
       setFile(null)
       loadHistory()
@@ -2929,74 +2916,53 @@ function TimetableUpload({ meta, onImported }) {
   return (
     <>
       <PageTitle
-        eyebrow="SEMESTER MASTER DATA"
+        eyebrow="MASTER DATA"
         title="Timetable Upload"
-        sub="A separate controlled upload point. Normally used once when the official semester timetable is issued."
+        sub="Upload one Excel workbook. LabPulse detects the timetable headers and academic years from the file."
       />
 
       <div className="upload-grid">
-        <Card title="Import Official Semester Timetable">
+        <Card title="Import Timetable Workbook">
           <div className="upload-hero">
             <div className="upload-icon">⇧</div>
             <div>
-              <h2>Upload Excel / CSV</h2>
+              <h2>Upload one Excel / CSV file</h2>
               <p>
-                The uploader reads the <b>Timetable</b> sheet
-                from a multi-sheet workbook when present, or
-                a clean single-sheet timetable/CSV.
+                Select the complete workbook. Academic year and semester
+                do not need to be selected separately. The system detects
+                supported columns and imports available venue values too.
               </p>
             </div>
-          </div>
-
-          <div className="form-grid">
-            <Select
-              label="Academic Year"
-              value={year}
-              set={setYear}
-              options={meta.years}
-            />
-
-            <Select
-              label="Semester"
-              value={semester}
-              set={setSemester}
-              options={['Semester 1', 'Semester 2']}
-            />
           </div>
 
           <label className="drop-zone">
             <input
               type="file"
               accept=".xlsx,.xls,.csv"
-              onChange={(event) =>
-                setFile(
-                  event.target.files?.[0] || null
-                )
-              }
+              onChange={(event) => {
+                setFile(event.target.files?.[0] || null)
+                setMessage('')
+                setError('')
+              }}
             />
-            <b>
-              {file ? file.name : 'Choose timetable file'}
-            </b>
+            <b>{file ? file.name : 'Choose timetable Excel file'}</b>
             <span>Accepted: .xlsx, .xls, .csv</span>
           </label>
 
           <div className="required-chips">
-            <b>Expected fields</b>
-            <span>Time Slot</span>
-            <span>Department</span>
+            <b>Recognized fields</b>
             <span>Academic Year</span>
+            <span>Department</span>
             <span>Section</span>
-            <span>Subject</span>
+            <span>Day</span>
+            <span>Period / Start Period</span>
+            <span>Time Slot / Time</span>
+            <span>Subject / Lab Name</span>
             <span>Students</span>
-            <span>Lab / Venue</span>
+            <span>Lab Venue (if provided)</span>
           </div>
 
-          {message && (
-            <div className="success-box">
-              ✓ {message}
-            </div>
-          )}
-
+          {message && <div className="success-box">✓ {message}</div>}
           {error && <InlineError text={error} />}
 
           <div className="actions">
@@ -3005,9 +2971,7 @@ function TimetableUpload({ meta, onImported }) {
               disabled={busy || !file}
               onClick={upload}
             >
-              {busy
-                ? 'Importing…'
-                : 'Import Semester Timetable'}
+              {busy ? 'Importing…' : 'Upload and Extract Data'}
             </button>
           </div>
         </Card>
@@ -3015,32 +2979,23 @@ function TimetableUpload({ meta, onImported }) {
         <Card title="Upload History">
           <div className="history-table">
             {history.map((item) => (
-              <div
-                className="history-item"
-                key={item.id}
-              >
+              <div className="history-item" key={item.id}>
                 <div>
                   <b>{item.file_name}</b>
-                  <small>
-                    {item.academic_year} •{' '}
-                    {item.semester}
-                  </small>
+                  <small>{item.academic_year} • {item.semester}</small>
                 </div>
                 <strong>{item.rows_imported}</strong>
               </div>
             ))}
-
-            {!history.length && (
-              <Empty text="No semester uploads yet." />
-            )}
+            {!history.length && <Empty text="No uploads yet." />}
           </div>
 
           <div className="soft-note">
-            <b>Why separate?</b>
+            <b>Automatic storage</b>
             <br />
-            Timetable = semester master data. Faculty
-            checklist, requests and workshops = day-to-day
-            operational data.
+            Imported rows are saved in the backend database and load again
+            when the page is reopened, provided the deployed database uses
+            persistent storage.
           </div>
         </Card>
       </div>

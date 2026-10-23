@@ -40,14 +40,19 @@ ALIASES = {
     "Day": "day",
 
     "Period": "period",
+    "Start Period": "period",
 
     "Time Slot": "time_slot",
     "TimeSlot": "time_slot",
     "Time": "time_slot",
+    "Duration": "time_slot",
+    "Lab Venue": "lab_venue",
+    "Venue": "lab_venue",
 
     "Subject": "subject",
     "Course": "subject",
     "Course Name": "subject",
+    "Lab Name": "subject",
 
     "Faculty": "faculty",
     "Faculty Name": "faculty",
@@ -380,73 +385,85 @@ def calculate_duration_minutes(time_slot):
 # READ SOURCE FILE
 # ============================================================
 
+def _dataframe_with_detected_header(raw_df):
+    """
+    Detect the actual header row (many college workbooks have
+    a title and subtitle above the headers). Supports headers in
+    the first 12 rows.
+    """
+    if raw_df is None or raw_df.empty:
+        return raw_df
+
+    required = set(REQUIRED_COLUMNS)
+    best = None
+    best_score = -1
+    limit = min(len(raw_df), 12)
+
+    for row_index in range(limit):
+        candidate = raw_df.iloc[row_index].tolist()
+        names = [normalize_column_name(value) for value in candidate]
+        present = {name for name in names if name and name != "nan"}
+        score = len(required.intersection(present))
+        # A timetable header should contain at least the identity/time fields.
+        if score > best_score:
+            best_score = score
+            best = (row_index, names)
+
+    if best is None or best_score < 5:
+        # Fall back to standard first-row headers for normal CSV/XLSX files.
+        result = raw_df.copy()
+        result.columns = [normalize_column_name(c) for c in result.iloc[0].tolist()]
+        return result.iloc[1:].reset_index(drop=True)
+
+    row_index, names = best
+    result = raw_df.iloc[row_index + 1:].copy()
+    result.columns = names
+    result = result.loc[:, [str(c).lower() != "nan" and str(c).strip() != "" for c in result.columns]]
+    return result.reset_index(drop=True)
+
+
 def read_source_file(file_path):
-
     path = Path(file_path)
-
     if not path.exists():
-        raise FileNotFoundError(
-            f"Timetable file not found: {file_path}"
-        )
+        raise FileNotFoundError(f"Timetable file not found: {file_path}")
 
     suffix = path.suffix.lower()
-
-    # --------------------------------------------------------
-    # CSV
-    # --------------------------------------------------------
-
     if suffix == ".csv":
-
-        return {
-            "Timetable": pd.read_csv(path)
-        }
-
-    # --------------------------------------------------------
-    # EXCEL
-    # --------------------------------------------------------
+        raw = pd.read_csv(path, header=None, dtype=object)
+        return {"Timetable": _dataframe_with_detected_header(raw)}
 
     if suffix in {".xlsx", ".xls"}:
-
         excel_file = pd.ExcelFile(path)
-
         sheets = {}
-
         for sheet_name in excel_file.sheet_names:
-
-            sheets[sheet_name] = pd.read_excel(
-                path,
-                sheet_name=sheet_name
-            )
-
+            raw = pd.read_excel(path, sheet_name=sheet_name, header=None, dtype=object)
+            sheets[sheet_name] = _dataframe_with_detected_header(raw)
         return sheets
 
-    raise ValueError(
-        "Unsupported timetable file type. "
-        "Use CSV, XLSX or XLS."
-    )
+    raise ValueError("Unsupported timetable file type. Use CSV, XLSX or XLS.")
 
-
-# ============================================================
-# SELECT TIMETABLE SHEET
-# ============================================================
 
 def select_timetable_sheet(sheets):
-
     if not sheets:
-        raise ValueError(
-            "The uploaded timetable file contains no sheets."
-        )
+        raise ValueError("The uploaded timetable file contains no sheets.")
 
-    # Prefer exact Timetable sheet
-    for sheet_name in sheets:
+    # Prefer a sheet with all required timetable columns. This also supports
+    # workbooks where the timetable sheet has a different name.
+    for sheet_name, sheet_df in sheets.items():
+        candidate = normalize_columns(sheet_df)
+        if REQUIRED_COLUMNS.issubset(set(candidate.columns)):
+            return candidate
 
-        if str(sheet_name).strip().lower() == "timetable":
-            return sheets[sheet_name]
-
-    # Otherwise use first sheet
-    first_sheet = next(iter(sheets.values()))
-
-    return first_sheet
+    # Helpful error instead of silently selecting an unrelated summary sheet.
+    available = []
+    for sheet_name, sheet_df in sheets.items():
+        available.append(f"{sheet_name}: {', '.join(map(str, sheet_df.columns[:12]))}")
+    raise ValueError(
+        "Could not find a timetable sheet with the required columns "
+        "(Academic Year, Department, Section, Day, Period/Start Period, "
+        "Time Slot/Time, Subject/Lab Name, Faculty and Students). Sheets found: "
+        + " | ".join(available)
+    )
 
 
 # ============================================================
@@ -494,6 +511,8 @@ def process_timetable(file_path: str):
     # --------------------------------------------------------
 
     df = df.fillna("")
+    if "lab_venue" not in df.columns:
+        df["lab_venue"] = ""
 
     # --------------------------------------------------------
     # STEP 5 — Validate real timetable columns
@@ -514,6 +533,7 @@ def process_timetable(file_path: str):
         "time_slot",
         "subject",
         "faculty",
+        "lab_venue",
     ]
 
     for column in text_columns:
@@ -652,6 +672,7 @@ def process_timetable(file_path: str):
         "resource_type",
         "duration_minutes",
         "source_file",
+        "lab_venue",
     ]
 
     df = df[final_columns]

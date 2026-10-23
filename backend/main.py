@@ -276,6 +276,7 @@ def normalize_year(value: str) -> str:
     aliases = {
 
         "I YEAR": "IST",
+        "IST YEAR": "IST",
         "1ST YEAR": "IST",
         "1ST": "IST",
         "1": "IST",
@@ -1211,8 +1212,7 @@ def laboratories():
     # Return only genuine physical lab venues found in the
     # venue-mapping table. Do not treat classroom or seminar
     # hall mappings as physical laboratories.
-    return query(
-        """
+       return query("""
         SELECT
             lab_venue AS lab_id,
             lab_venue AS lab_name,
@@ -1221,12 +1221,12 @@ def laboratories():
             venue_type AS lab_type,
             1 AS active
         FROM venue_mappings
-        WHERE UPPER(TRIM(venue_type)) = 'LABORATORY'
+        WHERE lab_venue IS NOT NULL
           AND TRIM(lab_venue) != ''
+          AND venue_type = 'LABORATORY'
         GROUP BY lab_venue, venue_type
         ORDER BY lab_venue
-        """
-    )
+    """)
 
 @app.get("/api/admin/laboratories")
 def admin_laboratories(request: Request):
@@ -1696,7 +1696,18 @@ async def upload_timetable(
             )
 
             imported = 0
+            # Venue mappings are extracted from the same uploaded workbook.
+            # Only replace existing mappings when the new file actually
+            # contains venue values; never erase valid mappings for a
+            # timetable that has no venue column.
+            venue_rows = [
+                row for row in rows
+                if clean(row.get("lab_venue", ""))
+            ]
+            if venue_rows:
+                db.execute("DELETE FROM venue_mappings")
 
+            venue_mappings_imported = 0
             for row in rows:
 
                 # ------------------------------------------------
@@ -1853,6 +1864,41 @@ async def upload_timetable(
                     ),
                 )
 
+                venue = clean(row.get("lab_venue", ""))
+                if venue:
+                    db.execute(
+                        """
+                        INSERT OR REPLACE INTO venue_mappings(
+                            academic_year, department, section, subject,
+                            day, time_slot, lab_venue, venue_type,
+                            mapping_status, source_file, notes
+                        )
+                        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                        """,
+                        (
+                            academic_year_value,
+                            department,
+                            normalize_section(section),
+                            subject,
+                            day,
+                            clean(row.get("time_slot", "")),
+                            venue,
+                            (
+                                "LABORATORY"
+                                if "LAB" in venue.upper() or "LABORATORY" in venue.upper()
+                                else "HALL"
+                                if "HALL" in venue.upper()
+                                else "CLASSROOM"
+                                if "CLASSROOM" in venue.upper() or "CLASS ROOM" in venue.upper()
+                                else "OTHER"
+                            ),
+                            "IMPORTED",
+                            file.filename or "timetable",
+                            "Extracted automatically from uploaded Excel workbook",
+                        ),
+                    )
+                    venue_mappings_imported += 1
+
                 imported += 1
 
             # ------------------------------------------------
@@ -1882,6 +1928,7 @@ async def upload_timetable(
         return {
             "success": True,
             "rows_imported": imported,
+            "venue_mappings_imported": venue_mappings_imported,
             "file": file.filename,
             "academic_year": academic_year,
             "semester": semester
