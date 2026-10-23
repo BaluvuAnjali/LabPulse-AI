@@ -3577,11 +3577,26 @@ def detect_conflicts(target_date: Optional[str] = None):
     conflicts = []
 
     # 1. Unverified timetable venue assignments
+   
     unverified_venues = query(
         """
-        SELECT vm.id, vm.lab_venue, vm.department, vm.section, vm.subject, vm.day, vm.time_slot, vm.academic_year
+        SELECT
+            vm.id,
+            vm.lab_venue,
+            vm.department,
+            vm.section,
+            vm.subject,
+            vm.day,
+            vm.time_slot,
+            vm.academic_year
+        FROM venue_mappings vm
+        LEFT JOIN laboratories l
+            ON (l.lab_id = vm.lab_venue OR l.lab_name = vm.lab_venue)
+        WHERE (l.id IS NULL OR l.active = 0)
+        LIMIT 6
         """
     )
+
     for v in unverified_venues:
         conflicts.append({
             "id": f"CONF-VM-{v['id']}",
