@@ -341,6 +341,7 @@ CREATE TABLE IF NOT EXISTS ml_predictions (
 -- 12. AUDIT LOGS
 -- ============================================================
 
+
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     action TEXT NOT NULL,
@@ -351,7 +352,36 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ============================================================
+-- 13. VENUE MAPPINGS
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS venue_mappings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    academic_year TEXT NOT NULL,
+    department TEXT NOT NULL,
+    section TEXT NOT NULL DEFAULT '',
+    subject TEXT NOT NULL,
+    day TEXT NOT NULL DEFAULT '',
+    time_slot TEXT NOT NULL DEFAULT '',
+    lab_venue TEXT NOT NULL DEFAULT '',
+    venue_type TEXT NOT NULL DEFAULT 'UNVERIFIED',
+    mapping_status TEXT NOT NULL DEFAULT 'VERIFIED',
+    source_file TEXT NOT NULL DEFAULT '',
+    notes TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (
+        academic_year,
+        department,
+        section,
+        subject,
+        day,
+        time_slot
+    )
+);
+
 """
+
 
 
 # ============================================================
@@ -392,10 +422,33 @@ def get_db():
 # ============================================================
 
 def initialize_database():
-
     with get_db() as db:
-
         db.executescript(SCHEMA)
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS venue_mappings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                academic_year TEXT NOT NULL,
+                department TEXT NOT NULL,
+                section TEXT NOT NULL DEFAULT '',
+                subject TEXT NOT NULL,
+                day TEXT NOT NULL DEFAULT '',
+                time_slot TEXT NOT NULL DEFAULT '',
+                lab_venue TEXT NOT NULL DEFAULT '',
+                venue_type TEXT NOT NULL DEFAULT 'UNVERIFIED',
+                mapping_status TEXT NOT NULL DEFAULT 'VERIFIED',
+                source_file TEXT NOT NULL DEFAULT '',
+                notes TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (
+                    academic_year,
+                    department,
+                    section,
+                    subject,
+                    day,
+                    time_slot
+                )
+            )
+        """)
 
 
 # ============================================================
