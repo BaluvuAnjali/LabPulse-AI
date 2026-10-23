@@ -3579,11 +3579,7 @@ def detect_conflicts(target_date: Optional[str] = None):
     # 1. Unverified timetable venue assignments
     unverified_venues = query(
         """
-        SELECT vm.id, vm.lab_venue, vm.department, vm.section, vm.subject, vm.day, vm.start_period, vm.end_period, vm.academic_year
-        FROM venue_mappings vm
-        LEFT JOIN laboratories l ON (l.lab_id = vm.lab_venue OR l.lab_name = vm.lab_venue)
-        WHERE (l.id IS NULL OR l.active = 0)
-        LIMIT 6
+        SELECT vm.id, vm.lab_venue, vm.department, vm.section, vm.subject, vm.day, vm.time_slot, vm.academic_year
         """
     )
     for v in unverified_venues:
@@ -3591,7 +3587,7 @@ def detect_conflicts(target_date: Optional[str] = None):
             "id": f"CONF-VM-{v['id']}",
             "laboratory": v["lab_venue"],
             "date": dt,
-            "time_interval": f"{v['day']} (Period {v['start_period']}..{v['end_period']})",
+            "time_interval": f"{v['day']} ({v['time_slot']})",
             "overlapping_items": f"{v['academic_year']} {v['department']}-{v['section']} ({v['subject']})",
             "conflict_reason": f"Timetable venue assignment '{v['lab_venue']}' requires physical verification",
             "severity": "REVIEW",
