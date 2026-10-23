@@ -2163,7 +2163,7 @@ def normalize_time_slot(value):
 
 
 def get_venue_mappings_for_slot(selected_date, time_slot):
-    """Return venue mappings matching the selected date and time slot."""
+    """Return venue mappings for the selected weekday and time slot."""
     from datetime import date, datetime
 
     try:
@@ -2171,29 +2171,30 @@ def get_venue_mappings_for_slot(selected_date, time_slot):
             selected_day = selected_date.strftime("%A").upper()
         else:
             selected_day = datetime.strptime(
-                str(selected_date).strip(),
-                "%Y-%m-%d",
+                str(selected_date).strip(), "%Y-%m-%d"
             ).strftime("%A").upper()
     except (ValueError, TypeError):
         return []
 
-    slot_text = normalize_time_slot(time_slot)
+    wanted_slot = normalize_time_slot(time_slot).replace(" ", "").upper()
 
-    # Match against columns that actually exist in venue_mappings.
+    # Use the actual venue_mappings schema: it has time_slot,
+    # not start_period/end_period.
     rows = query(
         """
         SELECT *
         FROM venue_mappings
         WHERE UPPER(TRIM(day)) = ?
-          AND REPLACE(TRIM(time_slot), ' ', '') =
-              REPLACE(TRIM(?), ' ', '')
         ORDER BY department, section, subject
         """,
-        (selected_day, slot_text),
+        (selected_day,),
     )
 
-    return [dict(row) for row in rows]
-
+    return [
+        row for row in rows
+        if normalize_time_slot(row.get("time_slot", ""))
+        .replace(" ", "").upper() == wanted_slot
+    ]
     
 def get_timetable_assignments_to_review(item):
     """Return matching timetable assignments, not confirmed availability."""
