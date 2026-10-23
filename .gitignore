@@ -1,0 +1,32 @@
+node_modules/
+frontend/node_modules/
+frontend/dist/
+backend/__pycache__/
+__pycache__/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+# Local database — do not publish
+academic_lab.db
+
+# Local timetable and college data — review before publishing
+data/
+training_data/
+
+# Local debugging utilities and code snippets
+backup_db.py
+debug_venue_lookup.py
+inspect_venues.py
+faculty_save_section.txt
+faculty_usage_code.txt
+test_main_venue_helper.py
+test_venue_lookup.py
+
+# Unused root-level npm lockfile
+/package-lock.json
+
+# Backup and intermediate source files
+*.backup
+*.before-checkboxes
