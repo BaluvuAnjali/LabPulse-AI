@@ -2163,13 +2163,11 @@ def normalize_time_slot(value):
 
 
 def get_venue_mappings_for_slot(selected_date, time_slot):
-    """Find venue mappings matching a date and clock-time slot."""
+    """Return venue mappings matching the selected date and time slot."""
     from datetime import date, datetime
 
     try:
-        if isinstance(selected_date, datetime):
-            selected_day = selected_date.strftime("%A").upper()
-        elif isinstance(selected_date, date):
+        if isinstance(selected_date, (datetime, date)):
             selected_day = selected_date.strftime("%A").upper()
         else:
             selected_day = datetime.strptime(
@@ -2181,78 +2179,20 @@ def get_venue_mappings_for_slot(selected_date, time_slot):
 
     slot_text = normalize_time_slot(time_slot)
 
-    # Find the period number for each academic year separately.
-    period_rows = query(
+    # Match against columns that actually exist in venue_mappings.
+    rows = query(
         """
-        SELECT DISTINCT academic_year, period
-        FROM timetable
-        WHERE UPPER(day) = ?
-          AND REPLACE(TRIM(time_slot), ' ', '') = REPLACE(?, ' ', '')
-          AND UPPER(resource_type) = 'LAB'
+        SELECT *
+        FROM venue_mappings
+        WHERE UPPER(TRIM(day)) = ?
+          AND REPLACE(TRIM(time_slot), ' ', '') =
+              REPLACE(TRIM(?), ' ', '')
+        ORDER BY department, section, subject
         """,
         (selected_day, slot_text),
     )
 
-    mappings = []
-    seen = set()
-
-    for period_row in period_rows:
-        academic_year = str(
-            period_row["academic_year"]
-        ).strip().upper()
-
-        period_text = str(
-            period_row["period"]
-        ).strip()
-
-        try:
-            period_number = int(
-                period_text.replace("Period-", "")
-            )
-        except ValueError:
-            continue
-
-        rows = query(
-            """
-            SELECT *
-            FROM venue_mappings
-            WHERE UPPER(day) = ?
-              AND UPPER(academic_year) = ?
-              AND start_period <= ?
-              AND end_period >= ?
-            ORDER BY department, section, subject
-            """,
-            (
-                selected_day,
-                academic_year,
-                period_number,
-                period_number,
-            ),
-        )
-
-        for row in rows:
-            mapping = dict(row)
-
-            # Avoid duplicate results if multiple timetable
-            # records refer to the same mapping.
-            key = mapping.get("id")
-
-            if key is None:
-                key = (
-                    mapping.get("academic_year"),
-                    mapping.get("department"),
-                    mapping.get("section"),
-                    mapping.get("subject"),
-                    mapping.get("day"),
-                    mapping.get("start_period"),
-                    mapping.get("end_period"),
-                )
-
-            if key not in seen:
-                seen.add(key)
-                mappings.append(mapping)
-
-    return mappings
+    return [dict(row) for row in rows]
 
     
 def get_timetable_assignments_to_review(item):
