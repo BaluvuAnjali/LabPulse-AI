@@ -777,13 +777,40 @@ select {
   gap: 6px
 }
 
-.field>span {
-  font-size: 10px;
-  color: #8b96a7;
-  font-weight: 700
+
+.login-card .field > span {
+  font-size: 12px;
+  color: rgba(234, 242, 255, 0.88);
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-.field input,
+
+
+/* Input fields */
+.field input {
+  width: 100%;
+  height: 46px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 10px;
+  padding: 0 13px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input::placeholder {
+  color: rgba(234, 242, 255, 0.52);
+}
+
+.field input:focus {
+  border-color: rgba(126, 190, 255, 0.85);
+  box-shadow: 0 0 0 3px rgba(126, 190, 255, 0.14);
+}
+
+/* Preserve styling for other forms */
 .field select {
   height: 40px;
   border: 1px solid #e1e6ee;
@@ -791,14 +818,14 @@ select {
   padding: 0 11px;
   background: #fff;
   color: #354258;
-  outline: none
+  outline: none;
 }
 
-.field input:focus,
 .field select:focus {
   border-color: #9c91e7;
-  box-shadow: 0 0 0 3px #8173e513
+  box-shadow: 0 0 0 3px #8173e513;
 }
+
 
 .legend-line {
   display: flex;
@@ -2684,33 +2711,94 @@ tbody tr:last-child td {
   margin-top: 8px;
 }
 
+
+/* Centered glass-texture login screen */
 .login-page {
-  background: #f4f7fb;
-}
-
-.login-art {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: #eaf2ff;
   background:
-    radial-gradient(circle at 85% 12%, rgba(98, 208, 183, .18), transparent 30%),
-    radial-gradient(circle at 8% 88%, rgba(122, 155, 231, .16), transparent 32%),
-    linear-gradient(145deg, #f0f8f6, #edf3fb 62%, #f7f5fc);
+    radial-gradient(ellipse at 15% 20%, rgba(62, 139, 180, 0.28), transparent 45%),
+    radial-gradient(ellipse at 85% 80%, rgba(111, 83, 177, 0.28), transparent 45%),
+    linear-gradient(135deg, #07111f 0%, #101d32 50%, #101329 100%);
 }
 
-.login-copy h1 {
-  color: #172b3b;
-  letter-spacing: -2.4px;
+/* Soft background glow */
+.login-page::before,
+.login-page::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
 }
 
-.login-copy h1 em {
-  color: var(--lp-primary);
+.login-page::before {
+  width: 300px;
+  height: 300px;
+  background: rgba(58, 180, 190, 0.22);
+  top: -100px;
+  left: -70px;
 }
 
-.login-copy p {
-  color: #607286;
+.login-page::after {
+  width: 350px;
+  height: 350px;
+  background: rgba(130, 91, 210, 0.20);
+  right: -100px;
+  bottom: -130px;
+}
+
+/* Glass login card */
+.login-card {
+  width: min(400px, 100%);
+  box-sizing: border-box;
+  padding: 38px 32px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.09);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  position: relative;
+  z-index: 1;
 }
 
 .login-card {
-  border-radius: 22px;
-  padding: clamp(24px, 3vw, 38px);
+  width: min(400px, 100%);
+  box-sizing: border-box;
+  padding: 38px 32px;
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.09);
+  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(22px);
+  box-shadow:
+    0 24px 70px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  position: relative;
+  z-index: 1;
+}
+
+/* ADD THE HEADING RULE HERE */
+.login-heading h1 {
+  margin: 0 0 30px;
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+  color: #ffffff;
 }
 
 .login-button {

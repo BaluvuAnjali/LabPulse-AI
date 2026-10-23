@@ -200,115 +200,48 @@ function Login({ onLogin }) {
     setError('')
   }
 
-  return (
-    <div className="login-page">
-      <div className="login-art">
-        <div className="login-brand">
-          <div className="brand-logo">LP</div>
-          <div>
-            <strong>LabPulse AI</strong>
-            <small>Academic Resource Intelligence</small>
-          </div>
-        </div>
-
-        <div className="login-copy">
-          <span className="eyebrow">SMART CAMPUS RESOURCE MANAGEMENT</span>
-          <h1>
-            Turn laboratory schedules into <em>intelligent availability.</em>
-          </h1>
-          <p>
-            Plan, confirm, allocate and analyze academic laboratory resources
-            from one place.
-          </p>
-
-          <div className="login-points">
-            <span>✓ Timetable intelligence</span>
-            <span>✓ Actual faculty usage</span>
-            <span>✓ Constraint-based allocation</span>
-            <span>✓ Utilization analytics</span>
-          </div>
-        </div>
+  
+return (
+  <div className="login-page">
+    <form className="login-card" onSubmit={submit}>
+      <div className="login-heading">
+        <h1>LabPulse AI</h1>
       </div>
 
-      <div className="login-panel">
-        <form className="login-card" onSubmit={submit}>
-          <div className="login-heading">
-            <span className="eyebrow">WELCOME BACK</span>
-            <h2>Sign in to LabPulse AI</h2>
-            <p>Use your department code and demo password.</p>
-          </div>
+      <label className="field">
+        <span>Login ID</span>
+        <input
+          autoFocus
+          value={loginId}
+          onChange={(event) => setLoginId(event.target.value)}
+          placeholder="Enter login ID"
+          autoComplete="username"
+        />
+      </label>
 
-          <label className="field">
-            <span>Login ID</span>
-            <input
-              autoFocus
-              value={loginId}
-              onChange={(event) => setLoginId(event.target.value)}
-              placeholder="e.g. aiml, cse, ece"
-            />
-          </label>
+      <label className="field">
+        <span>Password</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="Enter password"
+          autoComplete="current-password"
+        />
+      </label>
 
-          <label className="field">
-            <span>Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="hod / faculty"
-            />
-          </label>
+      {error && <InlineError text={error} />}
 
-          {error && <InlineError text={error} />}
+      <button
+        className="primary login-button"
+        disabled={loading || !loginId || !password}
+      >
+        {loading ? 'Signing in…' : 'Sign In'}
+      </button>
+    </form>
+  </div>
+)
 
-          <button
-            className="primary login-button"
-            disabled={loading || !loginId || !password}
-          >
-            {loading ? 'Signing in…' : 'Sign In →'}
-          </button>
-
-          <div className="demo-box">
-            <b>Demo access</b>
-            <p>
-              <strong>HOD:</strong> department code + <code>hod</code>
-            </p>
-            <p>
-              <strong>Faculty:</strong> department code + <code>faculty</code>
-            </p>
-            <p>
-              <strong>Admin:</strong> <code>admin</code> + <code>admin</code>
-            </p>
-          </div>
-
-          <div className="quick-login">
-            <span>Quick demo</span>
-            <div>
-              <button type="button" onClick={() => quickLogin('aiml', 'hod')}>
-                AIML HOD
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('cse', 'faculty')}
-              >
-                CSE Faculty
-              </button>
-              <button
-                type="button"
-                onClick={() => quickLogin('admin', 'admin')}
-              >
-                Admin
-              </button>
-            </div>
-          </div>
-        </form>
-
-        <small className="login-footer">
-          Academic project demo • Authentication is intentionally simplified
-          for presentation.
-        </small>
-      </div>
-    </div>
-  )
 }
 
 function MainApp({ session, onLogout }) {
