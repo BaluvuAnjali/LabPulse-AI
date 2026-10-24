@@ -202,44 +202,28 @@ function Login({ onLogin }) {
 
   
 return (
-  <div className="login-page">
-    <form className="login-card" onSubmit={submit}>
-      <div className="login-heading">
-        <h1>LabPulse AI</h1>
-      </div>
-
-      <label className="field">
-        <span>Login ID</span>
-        <input
-          autoFocus
-          value={loginId}
-          onChange={(event) => setLoginId(event.target.value)}
-          placeholder="Enter login ID"
-          autoComplete="username"
-        />
-      </label>
-
-      <label className="field">
-        <span>Password</span>
-        <input
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="Enter password"
-          autoComplete="current-password"
-        />
-      </label>
-
-      {error && <InlineError text={error} />}
-
-      <button
-        className="primary login-button"
-        disabled={loading || !loginId || !password}
-      >
-        {loading ? 'Signing in…' : 'Sign In'}
-      </button>
-    </form>
-  </div>
+  <main className="lp-auth-screen">
+    <section className="lp-auth-art" aria-label="Sri Vasavi Engineering College and faculty" />
+    <section className="lp-auth-side">
+      <form className="lp-auth-card" onSubmit={submit}>
+        <h1>Faculty Login</h1>
+        <label className="lp-auth-field">
+          <span>Email ID / Login ID</span>
+          <input autoFocus value={loginId} onChange={(event) => setLoginId(event.target.value)}
+            placeholder="Enter your email or login ID" autoComplete="username" required />
+        </label>
+        <label className="lp-auth-field">
+          <span>Password</span>
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)}
+            placeholder="Enter your password" autoComplete="current-password" required />
+        </label>
+        {error && <div className="lp-auth-error" role="alert">{error}</div>}
+        <button className="lp-auth-button" type="submit" disabled={loading || !loginId || !password}>
+          {loading ? 'Signing in…' : 'Login  →'}
+        </button>
+      </form>
+    </section>
+  </main>
 )
 
 }
